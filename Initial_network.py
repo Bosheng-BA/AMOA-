@@ -34,6 +34,7 @@ def initial_network(airport_cepo):
     in_angles = {}
     out_angles = {}
     time_windows = {}
+    init_l = {}
     # print("the number of points", len(airport_cepo.points))
     # points, lines, runways = [], [], []
     points = airport_cepo.points
@@ -68,6 +69,9 @@ def initial_network(airport_cepo):
             if (p4, p1) not in turn_lines:
                 turn_lines[(p1, p4)] = line.speed
                 turn_lines[(p4, p1)] = line.speed
+                length = -length
+        init_l[(p1, p4)] = length
+        init_l[(p4, p1)] = length
 
         if length == 0.0:
             print('Line = 0', line.oneway, line.taxiway)
@@ -111,6 +115,8 @@ def initial_network(airport_cepo):
         if (p2, p1) not in graph[p2]:
             graph[p2].append((p2, p1))
         length = float('inf')
+        # init_l[(p1, p2)] = length
+        # init_l[(p2, p1)] = length
         weights[(p1, p2)] = length
         weights[(p2, p1)] = length
         time_windows[(p1, p2)] = [(0, 24 * 60 * 60 * 1.5)]
@@ -170,7 +176,7 @@ def initial_network(airport_cepo):
             # print(costs)
 
     # Now, `costs` dictionary contains the time and fuel costs for each segment at different speeds
-    return graph, weights, time_windows, in_angles, out_angles, costs, pushback_edges
+    return graph, weights, time_windows, in_angles, out_angles, costs, pushback_edges, init_l, turn_lines
 
 
 # Initial_cost of the all points, and the cost is the smallest weight between the two points

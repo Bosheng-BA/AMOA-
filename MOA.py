@@ -169,7 +169,7 @@ def select_from_open(OPEN):
     :return: The tuple from OPEN with the smallest sum of the first elements of gn and fn.
     """
     # Find the alternative with the smallest sum of the first elements of gn and fn
-    return min(OPEN, key=lambda x: x[2][0] * 1 + x[2][1] * 1000)
+    return min(OPEN, key=lambda x: x[2][0] * weight[0] + x[2][1] * weight[1])
     # return min(OPEN, key=lambda x: x[1][0]*0.8 + x[1][0]*0.2 + x[2][0]*0.8 + x[2][1]*0.2)
     # return min(OPEN, key=lambda x: x[2][0])
 
@@ -312,7 +312,7 @@ def expand(n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_
     if not check:
         #  holding_enabled is Boolean type
         if holding_enabled:
-            # print("Holding_enable")
+            print("Holding_enable:", holding_cost)
             c_n_m_l = add_holding_cost(c_n_m_l, holding_cost)
         else:
             # print("No_Holding_enable")

@@ -110,7 +110,7 @@ if __name__ == "__main__":
         = Sour_and_Des.stand_and_runway_points(points=the_airport2.points)
     # network, pointcoordlist, network_cepo, in_angles, out_angles, in_angles_cepo, out_angles_cepo \
     #     = Initial_network.initial_network(the_airport2)
-    graph, weights, time_windows, in_angles, out_angles, costs, pushback_edges = \
+    graph, weights, time_windows, in_angles, out_angles, costs, pushback_edges, init_l, turn_lines = \
         Initial_network.initial_network(the_airport2)
 
     # 把路网中的cost信息提前预存，每次更换路网只需要运行一次
@@ -123,6 +123,9 @@ if __name__ == "__main__":
     Total_cost = 0
     graph_copy = graph
     init_Tcost = 0
+    turn_times = 0
+    Tcost_without_waiting = 0
+    Lenth = 0
     # list_def = [123, 182, 184, 191, 193, 203, 223, 232, 251, 298, 301, 358, 372, 380, 390, 397, 412, 454, 465, 480]
     # list_def = [111]
     # for flightnum in list_def:
@@ -207,24 +210,46 @@ if __name__ == "__main__":
         elif path:
             label_path = QPPTW.construct_labeled_path(graph, weights, time_windows, source, start_time, path)
             time_windows = QPPTW.Readjustment_time_windows(graph, weights, time_windows, label_path)
-            # Draw_path.create_matplotlib_figure(graph, path, name1, name2, flightnum)
+            # graph0, weights0, time_windows0, in_angles0, out_angles0, costs0, pushback_edges0 = \
+            #     Initial_network.initial_network(the_airport)
+            # Draw_path.create_matplotlib_figure(graph0, path, name1, name2, flightnum)
             # for i in range(0, len(path)-1):
             #     p1 = path[i]
             #     p2 = path[i + 1]
-            #     init_cost = weights[p1, p2]
+            #     # init_cost = weights[p1, p2]
             #     init_cost = costs[(p1, p2)]
             #     print("init_cost", init_cost)
             #     path_cost = path_cost + list(init_cost)[0]
             COSTS.append(list(COST)[0][0])
             Total_cost = Total_cost + list(COST)[0][0]
+            init_Tcost = init_Tcost + list(COST)[0][1]
+        # 用于结果处理原始路径以及转弯次数
+        lenth = 0
+        time_lenth = 0
+        turn_time = 0
+        for i in range(1, len(path)):
+            current_vertex = path[i - 1]
+            next_vertex = path[i]
+            edge = (current_vertex, next_vertex)
+            # print(weights[edge])
+            l = init_l[edge]
+            t = weights[edge]
+            if l <= 0:
+                turn_time += 1
+            lenth = lenth + abs(l)
+            time_lenth = time_lenth + t
+        turn_times = turn_times + turn_time
+        Lenth = Lenth + lenth
+        Tcost_without_waiting = Tcost_without_waiting + time_lenth
 
         # print("fligt:", flightnum, "Path:", path)
-        # print("Cost:", COST, path_cost)
+        # print("Cost:", COST, path_cost, lenth, time_lenth, turn_time)
 
     print("False flight number:", len(Failure_flight), "Total cost:", Total_cost, "Fuel_cost ", init_Tcost, "False:", Failure_flight)
+    print("Lenth:", Lenth, "Tcost_without_waiting:", Tcost_without_waiting, "Total_turn_times ", turn_times)
     COSTS.append(Total_cost)
     # 现在我们可以调用这些函数将列表写入到文本文件
-    write_list_to_json(COSTS, Cst.file + 'cost.json')
+    # write_list_to_json(COSTS, Cst.file + 'cost.json')
 
     # route, route_coord, route_activation_times = quickest_path_with_time_windows(graph, weights, time_windows,
     # source, target, start_time)

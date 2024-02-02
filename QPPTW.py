@@ -15,16 +15,20 @@ def Readjustment_time_windows(graph, weights, time_windows, path):
         if reservation[0] == path[i+1][0]:
             continue
         for i, time_window in enumerate(updated_time_windows[edge]):
+
             aj_e, bj_e = time_window
             timein_f, timeout_f = reservation[1]
 
             if timeout_f <= aj_e:
+
                 # Time-window is too late, move to the next conflicting edge
                 break
             elif timein_f < bj_e:
+                print("sssss")
                 # Time-window is too early, move to the next conflicting edge
                 continue
             elif timein_f < aj_e + weights[edge]:
+                print("1111")
                 if bj_e - weights[edge] < timeout_f:
                     # Remove Fj_e from F(e)
                     updated_time_windows[edge].pop(i)
@@ -32,6 +36,7 @@ def Readjustment_time_windows(graph, weights, time_windows, path):
                     # Shorten the start of the time-window
                     updated_time_windows[edge][i] = (timeout_f, bj_e)
             else:
+                print("222")
                 if bj_e - weights[edge] < timeout_f:
                     # Shorten the end of the time-window
                     updated_time_windows[edge][i] = (aj_e, timein_f)
