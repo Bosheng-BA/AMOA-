@@ -139,7 +139,7 @@ def initial_network(airport_cepo):
     # print(fuel_rates)
     speeds = [V1, V2, V3]  # Replace with actual values
     fuel_consumption_rate = X  # Replace with actual value
-    fuel_consumption_rates = [0.291, 0.291*0.75, 0.291*0.5]
+    # fuel_consumption_rates = [0.291, 0.291*0.75, 0.291*0.5]
 
 
     for (i, line) in enumerate(lines):

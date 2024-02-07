@@ -11,41 +11,54 @@ def Readjustment_time_windows(graph, weights, time_windows, path):
     for i, reservation in enumerate(path):
         if i == len(path)-1:
             break
-        edge = (reservation[0], path[i+1][0])
+        neighbor_edge = graph[path[i + 1][0]]
+        edge = (reservation[0], path[i + 1][0])
+        edge_conv = (path[i + 1][0], reservation[0])
+        # for e in neighbor_edge:
+
         if reservation[0] == path[i+1][0]:
             continue
         for i, time_window in enumerate(updated_time_windows[edge]):
 
             aj_e, bj_e = time_window
             timein_f, timeout_f = reservation[1]
-
-            if timeout_f <= aj_e:
-
-                # Time-window is too late, move to the next conflicting edge
-                break
-            elif timein_f < bj_e:
-                print("sssss")
-                # Time-window is too early, move to the next conflicting edge
-                continue
-            elif timein_f < aj_e + weights[edge]:
-                print("1111")
-                if bj_e - weights[edge] < timeout_f:
-                    # Remove Fj_e from F(e)
-                    updated_time_windows[edge].pop(i)
-                else:
-                    # Shorten the start of the time-window
-                    updated_time_windows[edge][i] = (timeout_f, bj_e)
-            else:
-                print("222")
-                if bj_e - weights[edge] < timeout_f:
-                    # Shorten the end of the time-window
-                    updated_time_windows[edge][i] = (aj_e, timein_f)
-                else:
-                    # Split the time-window
-                    updated_time_windows[edge][i] = (aj_e, timein_f)
-                    updated_time_windows[edge].insert(i + 1, (timeout_f, bj_e))
+            # print(reservation[1], time_window)
+            # print(i)
+            if bj_e > timeout_f and timein_f >= aj_e:
+                updated_time_windows[edge][i] = (timeout_f, bj_e)
+                updated_time_windows[edge_conv] = updated_time_windows[edge]
+                # print('2',reservation[1], time_window, updated_time_windows[edge_conv])
+            # if timeout_f <= aj_e:
+            #     if timeout_f - timein_f <= bj_e -aj_e:
+            #
+            #     else:
+            #
+            #     # Time-window is too late, move to the next conflicting edge
+            #     break
+            # elif timein_f > bj_e:
+            #     # print("sssss")
+            #     # Time-window is too early, move to the next conflicting edge
+            #     continue
+            # elif timein_f < aj_e + weights[edge]:
+            #     # print("1111")
+            #     if bj_e - weights[edge] < timeout_f:
+            #         # Remove Fj_e from F(e)
+            #         updated_time_windows[edge].pop(i)
+            #     else:
+            #         # Shorten the start of the time-window
+            #         updated_time_windows[edge][i] = (timeout_f, bj_e)
+            # else:
+            #     # print("222")
+            #     if bj_e - weights[edge] < timeout_f:
+            #         # Shorten the end of the time-window
+            #         updated_time_windows[edge][i] = (aj_e, timein_f)
+            #     else:
+            #         # Split the time-window
+            #         updated_time_windows[edge][i] = (aj_e, timein_f)
+            #         updated_time_windows[edge].insert(i + 1, (timeout_f, bj_e))
+            # updated_time_windows[edge_conv] = updated_time_windows[edge]
+            # print("222", updated_time_windows[edge_conv], updated_time_windows[edge])
         # for edge in conflicting_edges[reservation]:
-
     return updated_time_windows
 
 

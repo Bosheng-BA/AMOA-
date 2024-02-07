@@ -2,11 +2,9 @@ import math
 import QPPTW
 import json
 import Initial_network
+import Cst
 
-x = 1
-y = 0
-weight = [x, y]
-
+weight = Cst.weight
 
 def read_cost_vector(n, m, costs):
     # This should read the cost vector from the database or data structure
@@ -18,27 +16,28 @@ def check_time_windows(segment, time_windows, c_n_m_l, G_op, G_cl, start_time):
     # This should check time windows for all edges within the segment
     check = False
     holding_enabled = False
-    holding_cost = 0
+    # holding_cost = 0
     for window_start, window_end in time_windows[segment]:
         n = segment[0]
 
         if n in G_op and G_op[n]:
             # print("n in G_op ")
-            current_time = start_time + int(next(iter(G_op[n]))[0])
+            current_time = start_time + next(iter(G_op[n]))[0]
         elif n in G_cl and G_cl[n]:
             # print('n in G_cl')
-            current_time = start_time + int(next(iter(G_cl[n]))[0])
+            current_time = start_time + next(iter(G_cl[n]))[0]
 
         if c_n_m_l[0] + current_time > window_end:
             check = False
             break
-        elif c_n_m_l[0] + current_time <= window_start and window_end - window_start >= c_n_m_l[0]:
-            check = False
+        elif current_time < window_start and window_end - window_start >= c_n_m_l[0]:
+            check = True
             holding_enabled = True
             holdcost = window_start - current_time
+            print(window_start, current_time)
             holding_cost = (holdcost, holdcost * 0)
         elif window_start <= c_n_m_l[0] + current_time <= window_end:
-            check = True
+            check = False
             holding_enabled = True
             holding_cost = (0, 0)
 
@@ -309,7 +308,7 @@ def expand(n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_
     check, holding_enabled, holding_cost, c_n_m_l = check_time_windows(segment, time_windows, c_n_m_l, G_op, G_cl,
                                                               start_time)
     # check = True
-    if not check:
+    if check:
         #  holding_enabled is Boolean type
         if holding_enabled:
             print("Holding_enable:", holding_cost)

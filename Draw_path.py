@@ -10,6 +10,7 @@ from bokeh.palettes import Spectral4
 from bokeh.plotting import figure, output_file, show
 from bokeh.layouts import column
 from bokeh.models import Slider, Button
+import Cst
 from bokeh.io import curdoc
 import time
 import datetime
@@ -59,7 +60,7 @@ def create_bokeh_animation(network_point, pointcoordlist):
 def create_matplotlib_figure(graph, path, stand, runway, flightnum):
     # 创建保存图像的文件夹
     # save_dir = 'new_QPPTW_saved_figures_2019-08-07-new-考虑修改时间窗'
-    save_dir = 'TEST_2024-01-26-1954'
+    save_dir = 'TEST_2024-02-05-' + str(Cst.weight)
     # path = [(22622.1,8509.6), (22622.7,8502.7), (22624.5,8495.9), (22627.5,8489.6), (22631.5,8483.9), (22636.4,8479.0), (22642.1,8475.0), (22648.4,8472.0), (22655.2,8470.2), (22662.1,8469.6)]
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
@@ -403,3 +404,4 @@ def create_bokeh_animation_with_paths2(network_point, network, pointcoordlist, v
 
     layout = column(p, slider, button)
     show(layout)
+

@@ -1,6 +1,7 @@
 import os
 # 打开并读取文件
-file = 'gaptraffic-2018-09-29-new'
+weight = [1, 0]
+file = 'gaptraffic-2018-07-18-new'
 DATA_PATH = "/Users/小巴的工作台/BBS_WORK_SPACE/Python_Workspace/airport/Datas/DATA"
 APT_FILE = os.path.join(DATA_PATH, "tianjin_new.txt")
 

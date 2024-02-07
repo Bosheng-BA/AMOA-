@@ -10,6 +10,7 @@ import Cst
 import TEST
 import QPPTW
 import Draw_path
+import copy
 from tqdm import tqdm
 
 # above imported library
@@ -121,17 +122,17 @@ if __name__ == "__main__":
 
     COSTS = []
     Total_cost = 0
-    graph_copy = graph
+    graph_copy = copy.deepcopy(graph)
     init_Tcost = 0
     turn_times = 0
     Tcost_without_waiting = 0
     Lenth = 0
     # list_def = [123, 182, 184, 191, 193, 203, 223, 232, 251, 298, 301, 358, 372, 380, 390, 397, 412, 454, 465, 480]
-    # list_def = [111]
+    # list_def = [287, 294, 295, 306, 309, 314, 315]
     # for flightnum in list_def:
     # 使用tqdm来遍历航班列表，并设置进度条长度(ncols)为100
-    # for flightnum in tqdm(range(len(flights)), ncols=100):
-    for flightnum in range(0, len(flights)):
+    for flightnum in tqdm(range(len(flights)), ncols=100):
+    # for flightnum in range(0, 100):
     # for flightnum in range(0, 3):
         flight = flights[flightnum]
         # 多飞机规划路径：
@@ -161,18 +162,23 @@ if __name__ == "__main__":
             for edge in graph[source]:
                 if edge not in pushback_edges:  # Ensure the boolean value
                     continue
-                if edge in pushback_edges:
+                elif edge in pushback_edges:
                     check += 1
 
+        list_edge = graph[source]
         if check >= 2:  # When the stand have two ways to pushback, we need choose one
-            for edge in graph[source]:
-                if edge in pushback_edges:
-                    graph_copy[source].remove(edge)
+            # print("111")
+            # print("list_edge:", list_edge)
+            for e in list_edge:
+                if e in pushback_edges:
+                    # print("e:", e)
+                    graph_copy[source].remove(e)
                     # print(graph_copy)
                     path, COST = TEST.AMOA_star(source, target, costs, graph_copy, time_windows, start_time, out_angles,
                                                 in_angles, Stand, weights, cost_of_path)
-                    graph_copy[source].append(edge)
+                    graph_copy[source].append(e)
                     COST_list.append(COST)
+                    # print("COST_list:", COST_list)
                     paths.append(path)
 
             if COST_list:
@@ -181,6 +187,7 @@ if __name__ == "__main__":
                 flattened_list = list(COST_list)
                 # 过滤掉所有的 None 元素
                 filtered_list = [x for x in flattened_list if x is not None]
+                # print(COST_list)
 
                 if filtered_list:
                     # 如果过滤后的列表不为空，则寻找最小成本向量
@@ -190,6 +197,7 @@ if __name__ == "__main__":
                     min_cost_vector = None
 
                 COST = min_cost_vector
+                print(min_cost_vector)
                 # COST = min(COST_list, key=lambda x: x[0])
                 if min_cost_vector:
                     # print(COST_list, COST)
@@ -212,7 +220,7 @@ if __name__ == "__main__":
             time_windows = QPPTW.Readjustment_time_windows(graph, weights, time_windows, label_path)
             # graph0, weights0, time_windows0, in_angles0, out_angles0, costs0, pushback_edges0 = \
             #     Initial_network.initial_network(the_airport)
-            # Draw_path.create_matplotlib_figure(graph0, path, name1, name2, flightnum)
+            # Draw_path.create_matplotlib_figure(graph, path, name1, name2, flightnum)
             # for i in range(0, len(path)-1):
             #     p1 = path[i]
             #     p2 = path[i + 1]
@@ -223,45 +231,38 @@ if __name__ == "__main__":
             COSTS.append(list(COST)[0][0])
             Total_cost = Total_cost + list(COST)[0][0]
             init_Tcost = init_Tcost + list(COST)[0][1]
-        # 用于结果处理原始路径以及转弯次数
-        lenth = 0
-        time_lenth = 0
-        turn_time = 0
-        for i in range(1, len(path)):
-            current_vertex = path[i - 1]
-            next_vertex = path[i]
-            edge = (current_vertex, next_vertex)
-            # print(weights[edge])
-            l = init_l[edge]
-            t = weights[edge]
-            if l <= 0:
-                turn_time += 1
-            lenth = lenth + abs(l)
-            time_lenth = time_lenth + t
-        turn_times = turn_times + turn_time
-        Lenth = Lenth + lenth
-        Tcost_without_waiting = Tcost_without_waiting + time_lenth
+            # 用于结果处理原始路径以及转弯次数
+            lenth = 0
+            time_lenth = 0
+            turn_time = 0
+            for i in range(1, len(path)):
+                current_vertex = path[i - 1]
+                next_vertex = path[i]
+                edge = (current_vertex, next_vertex)
+                # print(weights[edge])
+                l = init_l[edge]
+                t = weights[edge]
+                if l <= 0:
+                    turn_time += 1
+                lenth = lenth + abs(l)
+                time_lenth = time_lenth + t
+            turn_times = turn_times + turn_time
+            Lenth = Lenth + lenth
+            Tcost_without_waiting = Tcost_without_waiting + time_lenth
 
         # print("fligt:", flightnum, "Path:", path)
-        # print("Cost:", COST, path_cost, lenth, time_lenth, turn_time)
+        print("fligt:", flightnum)
+        print("Cost:", COST, path_cost, lenth, time_lenth, turn_time)
 
     print("False flight number:", len(Failure_flight), "Total cost:", Total_cost, "Fuel_cost ", init_Tcost, "False:", Failure_flight)
     print("Lenth:", Lenth, "Tcost_without_waiting:", Tcost_without_waiting, "Total_turn_times ", turn_times)
     COSTS.append(Total_cost)
+    COSTS.append(Lenth)
+    COSTS.append(Tcost_without_waiting)
+    COSTS.append(turn_times)
+    COSTS.append(init_Tcost)
     # 现在我们可以调用这些函数将列表写入到文本文件
-    # write_list_to_json(COSTS, Cst.file + 'cost.json')
-
-    # route, route_coord, route_activation_times = quickest_path_with_time_windows(graph, weights, time_windows,
-    # source, target, start_time)
-    #
-    #     activation_times_list.append(route_activation_times)
-    #     pathlist.append(route)
-    #     path_coordlist.append(route_coord)
-    #
-    #     get_node_lock_periods(pathlist, activation_times_list, network_cepo, flight, node_lock_periods)
-    #
-    #     print('flightnum', flightnum)
-    #     print('path', route)
+    write_list_to_json(COSTS, Cst.file + str(Cst.weight) + 'cost.json')
     #
     # # 确保目录存在
     # file = Cst.file
