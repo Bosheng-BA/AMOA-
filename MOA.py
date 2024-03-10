@@ -34,7 +34,7 @@ def check_time_windows(segment, time_windows, c_n_m_l, G_op, G_cl, start_time):
             check = True
             holding_enabled = True
             holdcost = window_start - current_time
-            print(window_start, current_time)
+            # print(window_start, current_time)
             holding_cost = (holdcost, holdcost * 0)
         elif window_start <= c_n_m_l[0] + current_time <= window_end:
             check = False
@@ -70,6 +70,7 @@ def is_dominated(c, c_prime):
     if c and c_prime:
         # print("c", c, "C_prime", c_prime)
         if all(c_j <= c_prime_j for c_j, c_prime_j in zip(c, c_prime)) and c != c_prime:
+
             dominated = True
     # else:
     #     dominated = False
@@ -89,7 +90,6 @@ def reconstruct_paths(SG, end, start):
         path.append(current_node)
         current_node = SG.get(current_node)  # 获取父节点
     path.append(start)
-
     return path[::-1]  # 反转路径
 
 
@@ -200,13 +200,16 @@ def heuristic_function(current_position, target_position, graph, weights, time_w
     #         # fuel_cost = 0
     #         if edge in Initial_network.turn_lines:
     #             # print( Initial_network.thrust_level[abs(Initial_network.turn_lines[edge]) - 3])
-    #             # fuel_cost = fuel_cost + weights[edge] * Initial_network.thrust_level[abs(Initial_network.turn_lines[edge]) - 3]
-    #             fuel_cost = fuel_cost + weights[edge] * 0.101
+    #             # print(Initial_network.turn_lines[edge])
+    #             fuel_cost = fuel_cost + weights[edge] * Initial_network.thrust_level[abs(Initial_network.turn_lines[edge]) - 3]
+    #             # fuel_cost = fuel_cost + weights[edge] * Initial_network.thrust_level[0]
     #         else:
-    #             fuel_cost = fuel_cost + weights[edge] * 0.291
+    #             fuel_cost = fuel_cost + weights[edge] * Initial_network.thrust_level[-1]
     # else:
     #     # print(time_cost)
     #     fuel_cost = time_cost
+    # # print(time_cost, source, target)
+    # # fuel_cost = 0
     # h_m = (time_cost, fuel_cost)
 
     source = str(current_position)
@@ -243,6 +246,8 @@ def AMOA_star(start, end, costs, graph, time_windows, start_time, out_angles, in
         i += 1
         n, g_n, f_n = select_from_open(OPEN)
         OPEN.remove((n, g_n, f_n))
+        OPEN = [item for item in OPEN if not any(math.isinf(x) for x in item[2])]
+
         exists_in_G_op = any(g_n in value_set for value_set in G_op.values())
         if exists_in_G_op:
             key_to_remove = [k for k, v in G_op.items() if g_n in v][0]  # 假设 g_n 只在一个键的值集合中
@@ -261,9 +266,12 @@ def AMOA_star(start, end, costs, graph, time_windows, start_time, out_angles, in
         if n == end:
             # print("n == end")
             COSTS.add(g_n)
+            # print(COSTS)
             OPEN = [alt for alt in OPEN if is_dominated(alt[2], g_n)]
             if not OPEN:
+                # print("11111")
                 path = reconstruct_paths(SG, end, start)
+                # print(path)
                 return path, COSTS
         else:
             for segment in graph[n]:
@@ -336,6 +344,7 @@ def expand(n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_
         # print(n, SG[m])
         if g_m in G_op.get(m, set()).union(G_cl.get(m, set())):
             # print('g_m in G_op.get(m, set()) or g_m in G_cl.get(m, set())')
+            # m = m
             SG[m] = n
         elif not any(is_dominated(other, g_m) for other in G_op.get(m, set()).union(G_cl.get(m, set()))):
             # print('not any(is_dominated(g_m, other) for other in G_op.get(m, set()).union(G_cl.get(m, set())))')

@@ -2,11 +2,22 @@ import gaptraffic
 import airc_type
 import Cst
 
-filename = Cst.flight_file_name
-flights = gaptraffic.read_flights(filename)
-airc_type_dict = airc_type.airc_type_dict
+# airc_type_dict = airc_type.airc_type_dict
 Heavy = ["RH", "SH", "TH"]
 Middle_and_Light = ["RM", "TM", "TL"]
+
+# 打开并读取文件
+file_name = Cst.airc_file_name
+# flights = gaptraffic.read_flights(filename)
+# 创建一个空字典来存储键值对
+airc_type_dict = {}
+with open(file_name, 'r') as file:
+    for line in file:
+        # 使用split方法将每一行分割为两部分
+        key, value = line.strip().split()
+        # 将键值对存储在字典中
+        airc_type_dict[key] = value
+# airc_type_dict = airc_type.airc_type_dict
 
 
 def stand_and_runway_points(points):
@@ -81,4 +92,3 @@ def find_the_sour_des(stands, pists, flight):
             elif arcftype in Middle_and_Light:
                 sour = pists['W7']  # W7
     return sour, des
-

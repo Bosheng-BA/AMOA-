@@ -1,7 +1,9 @@
 import pandas as pd
 
+
 class Flight:
-    def __init__(self, data, callsign, departure, arrivee, ttot, tldt, atot, aldt, type, wingspan, airline, qfu, parking, registration):
+    def __init__(self, data, callsign, departure, arrivee, ttot, tldt, atot, aldt, type, wingspan, airline, qfu,
+                 parking, registration):
         self.data = data
         self.callsign = callsign
         self.departure = departure
@@ -17,6 +19,7 @@ class Flight:
         self.parking = parking
         self.registration = registration
 
+
 def read_flights(files_name):
     # 读取Excel文件
     df = pd.read_csv(files_name)
@@ -30,7 +33,7 @@ def read_flights(files_name):
 
     # 对DataFrame进行排序
     df_sorted = df.sort_values(by='start_taxi_time')
-    df_sorted.to_csv("sorted_file11.csv", index=False)
+    df_sorted.to_csv(files_name + "sorted_file.csv", index=False)
 
     for index, row in df_sorted.iterrows():
         flight = Flight(row['data'], row['callsign'], row['departure'], row['arrivee'], row['TTOT'], row['TLDT'],
@@ -38,6 +41,3 @@ def read_flights(files_name):
                         row['QFU'], row['Parking'], row['registration'])
         flights.append(flight)
     return flights
-
-
-
