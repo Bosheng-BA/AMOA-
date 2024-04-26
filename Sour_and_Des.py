@@ -1,5 +1,4 @@
 import gaptraffic
-import airc_type
 import Cst
 
 # airc_type_dict = airc_type.airc_type_dict

@@ -4,7 +4,7 @@ import json
 import Initial_network
 import Cst
 
-weight = Cst.weight
+# weight = Cst.weight
 
 def read_cost_vector(n, m, costs):
     # This should read the cost vector from the database or data structure
@@ -35,7 +35,7 @@ def check_time_windows(segment, time_windows, c_n_m_l, G_op, G_cl, start_time):
             holding_enabled = True
             holdcost = window_start - current_time
             # print(window_start, current_time)
-            holding_cost = (holdcost, holdcost * 0)
+            holding_cost = (holdcost, holdcost * 0.0355)
         elif window_start <= c_n_m_l[0] + current_time <= window_end:
             check = False
             holding_enabled = True
@@ -160,7 +160,7 @@ def eliminate_dominated(m, g_m, G_op, G_cl, OPEN):
     return G_op, G_cl, OPEN
 
 
-def select_from_open(OPEN):
+def select_from_open(OPEN, weight):
     """
     Select the alternative from OPEN with the smallest sum of the first elements of gn and fn.
 
@@ -168,8 +168,7 @@ def select_from_open(OPEN):
     :return: The tuple from OPEN with the smallest sum of the first elements of gn and fn.
     """
     # Find the alternative with the smallest sum of the first elements of gn and fn
-    return min(OPEN, key=lambda x: x[2][0] * weight[0] + x[2][1] * weight[1])
-    # return min(OPEN, key=lambda x: x[1][0]*0.8 + x[1][0]*0.2 + x[2][0]*0.8 + x[2][1]*0.2)
+    return min(OPEN, key=lambda x: x[2][0] * weight[0] + (x[2][1] * weight[1] * 8.06))
     # return min(OPEN, key=lambda x: x[2][0])
 
 
@@ -226,25 +225,18 @@ def heuristic_function(current_position, target_position, graph, weights, time_w
     # print(h_m)
     return h_m
 
-# # Example usage
-# # Replace 'point_a' and 'point_b' with actual points from your network
-# point_a = airport_cepo.points[0].xy  # Current position
-# point_b = airport_cepo.points[-1].xy  # Target position
-# max_speed = max([line.speed for line in airport_cepo.lines if line.speed > 0])  # Maximum speed in the network
-# min_fuel_rate = X  # Minimum fuel consumption rate (replace X with actual value)
 
-
-def AMOA_star(start, end, costs, graph, time_windows, start_time, out_angles, in_angles, Stand, weights, cost_of_path):
+def AMOA_star(start, end, costs, graph, time_windows, start_time, out_angles, in_angles, Stand, weights, cost_of_path, W):
     SG = {}  # Acyclic search graph
     G_op = {start: {(0, 0)}}
     G_cl = {start: set()}
     OPEN = [(start, (0, 0), (0, 0))]
     COSTS = set()
-    i = 0
+    holding_time = 0
 
     while OPEN:
-        i += 1
-        n, g_n, f_n = select_from_open(OPEN)
+        n, g_n, f_n = select_from_open(OPEN, W)
+        # print(W)
         OPEN.remove((n, g_n, f_n))
         OPEN = [item for item in OPEN if not any(math.isinf(x) for x in item[2])]
 
@@ -255,27 +247,18 @@ def AMOA_star(start, end, costs, graph, time_windows, start_time, out_angles, in
             G_op.pop(key_to_remove)
 
         if n in G_cl:
-            # print("22222")
             G_cl[n].add(g_n)
         else:
-            # print("33333")
             G_cl[n] = {g_n}
 
-        # if n == (22107, 8234):
-        #     n = n
         if n == end:
-            # print("n == end")
             COSTS.add(g_n)
-            # print(COSTS)
             OPEN = [alt for alt in OPEN if is_dominated(alt[2], g_n)]
             if not OPEN:
-                # print("11111")
                 path = reconstruct_paths(SG, end, start)
-                # print(path)
-                return path, COSTS
+                return path, COSTS, holding_time
         else:
             for segment in graph[n]:
-                # print(segment)
                 m = segment[1]  # Assuming segment identifies the end node
 
                 # 检查next_vertex是否在Stand中，并且不是目标点
@@ -297,22 +280,23 @@ def AMOA_star(start, end, costs, graph, time_windows, start_time, out_angles, in
 
                     if len(C_n_m) == 2 and isinstance(C_n_m, tuple):  # Turn segment
                         c_n_m_l = C_n_m
-                        n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_windows, start_time, C_n_m, c_n_m_l, segment = \
+                        n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_windows, start_time, C_n_m, c_n_m_l, segment, holding_time = \
                             expand(n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_windows,
-                                   start_time, C_n_m, c_n_m_l, segment, weights,  in_angles, out_angles, Stand, cost_of_path)
+                                   start_time, C_n_m, c_n_m_l, segment, weights,  in_angles, out_angles, Stand, cost_of_path, holding_time)
                     elif len(C_n_m) >= 1 and isinstance(C_n_m, list):  # Normal segment
                         for c_n_m_l in C_n_m:
-                            n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_windows, start_time, C_n_m, c_n_m_l, segment = \
+                            n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_windows, start_time, C_n_m, c_n_m_l, segment, holding_time = \
                                 expand(n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_windows,
-                                       start_time, C_n_m, c_n_m_l, segment, weights,  in_angles, out_angles, Stand, cost_of_path)
+                                       start_time, C_n_m, c_n_m_l, segment, weights,  in_angles, out_angles, Stand, cost_of_path, holding_time)
 
     path = reconstruct_paths(SG, n, start)
     # path = None
     COSTS = None
-    return path, COSTS
+    return path, COSTS, holding_time
 
 
-def expand(n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_windows, start_time, C_n_m, c_n_m_l, segment, weights,  in_angles, out_angles, Stand, cost_of_path):
+def expand(n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_windows, start_time, C_n_m, c_n_m_l,
+           segment, weights,  in_angles, out_angles, Stand, cost_of_path, holding_time):
     check, holding_enabled, holding_cost, c_n_m_l = check_time_windows(segment, time_windows, c_n_m_l, G_op, G_cl,
                                                               start_time)
     # check = True
@@ -320,10 +304,11 @@ def expand(n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_
         #  holding_enabled is Boolean type
         if holding_enabled:
             print("Holding_enable:", holding_cost)
+            hoding_time = holding_time + holding_cost[0]
             c_n_m_l = add_holding_cost(c_n_m_l, holding_cost)
         else:
             # print("No_Holding_enable")
-            return n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_windows,start_time, C_n_m, c_n_m_l, segment
+            return n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_windows,start_time, C_n_m, c_n_m_l, segment, holding_time
 
     g_m = tuple(sum(x) for x in zip(g_n, c_n_m_l))
     if m not in SG:
@@ -363,4 +348,4 @@ def expand(n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_
                 # if n not in Stand:
                 SG[m] = n
         # print(SG)
-    return n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_windows, start_time, C_n_m, c_n_m_l, segment
+    return n, m, g_n, f_n, SG, G_op, G_cl, OPEN, COSTS, end, costs, graph, time_windows, start_time, C_n_m, c_n_m_l, segment, holding_time

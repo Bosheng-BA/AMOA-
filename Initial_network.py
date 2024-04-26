@@ -77,7 +77,7 @@ def initial_network(airport_cepo):
            可能这个距离计算不准确存在误差但影响不大
            正常做对比时不需要删掉"""
         if length_cepo == 0.1:
-            print('Line = 0。1', line.oneway, line.taxiway, line.xys, length)
+            # print('Line = 0。1', line.oneway, line.taxiway, line.xys, length)
             continue
         if p1 == (22622, 7891):
             p1 = (22622, 7892)
@@ -94,8 +94,8 @@ def initial_network(airport_cepo):
         init_l[(p1, p4)] = length
         init_l[(p4, p1)] = length
 
-        if length == 0.0:
-            print('Line = 0', line.oneway, line.taxiway)
+        # if length == 0.0:
+        #     print('Line = 0', line.oneway, line.taxiway)
 
         while length != 0.0:  # ignore the line with length '0'
             # network[p1][p4] = length_cepo

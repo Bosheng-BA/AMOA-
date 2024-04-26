@@ -3,7 +3,6 @@ import airport
 import Initial_network
 import datetime
 import Sour_and_Des
-# import Find_Routing
 import json
 import os
 import Cst
@@ -12,6 +11,7 @@ import QPPTW
 import Draw_path
 import copy
 from tqdm import tqdm
+import pandas as pd
 import gaptraffic
 
 # above imported library
@@ -57,10 +57,18 @@ if __name__ == "__main__":
     points = the_airport2.points
     runways = the_airport2.runways
 
-    # """遍历一天"""
-    # flight_file_name_list = Cst.flight_file_name
+    stand_dict, runway_dict, stand_list, stand_dict2, runway_list, runway_dict2 \
+        = Sour_and_Des.stand_and_runway_points(points=the_airport2.points)
+
+
+    # 把路网中的cost信息提前预存，每次更换路网只需要运行一次
+    # Initial_network.initial_cost(graph, weights, time_windows, in_angles, out_angles, Stand)
+
+    """遍历一天"""
+    flight_file_name_list = Cst.file
+    # print(Cst.file)
     """一次性遍历十天"""
-    flight_file_name_list = Cst.flight_file_name_list
+    # flight_file_name_list = Cst.flight_file_name_list
 
     COSTS = []
     Stand = []
@@ -68,18 +76,10 @@ if __name__ == "__main__":
         if p.ptype == 'Stand' or p.ptype == 'Runway':
             Stand.append(p.xy)
 
-    def suanfa(flights, file_name):
-        Failure_flight = []
-
-        stand_dict, runway_dict, stand_list, stand_dict2, runway_list, runway_dict2 \
-            = Sour_and_Des.stand_and_runway_points(points=the_airport2.points)
-        # network, pointcoordlist, network_cepo, in_angles, out_angles, in_angles_cepo, out_angles_cepo \
-        #     = Initial_network.initial_network(the_airport2)
+    def suanfa(flights, file_name, W):
         graph, weights, time_windows, in_angles, out_angles, costs, pushback_edges, init_l, turn_lines = \
             Initial_network.initial_network(the_airport2)
-
-        # 把路网中的cost信息提前预存，每次更换路网只需要运行一次
-        # Initial_network.initial_cost(graph, weights, time_windows, in_angles, out_angles, Stand)
+        Failure_flight = []
 
         cost_of_path = {}
         with open('cost_of_path.json', 'r') as file:
@@ -91,11 +91,13 @@ if __name__ == "__main__":
         turn_times = 0
         Tcost_without_waiting = 0
         Lenth = 0
+        totalholding_time = 0
 
         # for flightnum in list_def:
         # 使用tqdm来遍历航班列表，并设置进度条长度(ncols)为100
-        for flightnum in tqdm(range(len(flights)), ncols=100):
-        # for flightnum in range(80, 100):
+        # for flightnum in tqdm(range(len(flights)), ncols=100):
+        # for flightnum in range(len(flights)):
+        for flightnum in range(183, 184):
             # 多飞机规划路径：初始化开始时间
             init_time = datetime.datetime(2023, 4, 17, 7, 0)
 
@@ -128,8 +130,8 @@ if __name__ == "__main__":
                 for e in list_edge:
                     if e in pushback_edges:
                         graph_copy[source].remove(e)
-                        path, COST = MOA.AMOA_star(source, target, costs, graph_copy, time_windows, start_time, out_angles,
-                                                    in_angles, Stand, weights, cost_of_path)
+                        path, COST, holding_time= MOA.AMOA_star(source, target, costs, graph_copy, time_windows, start_time, out_angles,
+                                                    in_angles, Stand, weights, cost_of_path, W)
                         graph_copy[source].append(e)
                         COST_list.append(COST)
                         paths.append(path)
@@ -158,29 +160,22 @@ if __name__ == "__main__":
                     else:
                         path = None
             else:  # the normal condition
-                path, COST = MOA.AMOA_star(source, target, costs, graph, time_windows, start_time, out_angles, in_angles,
-                                            Stand, weights, cost_of_path)
+                path, COST , holding_time= MOA.AMOA_star(source, target, costs, graph, time_windows, start_time, out_angles, in_angles,
+                                            Stand, weights, cost_of_path, W)
 
             # path, COST = TEST.AMOA_star(source, target, costs, graph, time_windows, start_time, out_angles, in_angles,
             # Stand)
-            path_cost = 0
+
             if COST is None or path is None:
                 Failure_flight.append(flightnum)
                 # if path:
                     # Draw_path.create_matplotlib_figure(graph, path, name1, name2, flightnum)
             elif path:
-                label_path = QPPTW.construct_labeled_path(graph, weights, time_windows, source, start_time, path)
-                time_windows = QPPTW.Readjustment_time_windows(graph, weights, time_windows, label_path)
+                # label_path = QPPTW.construct_labeled_path(graph, weights, time_windows, source, start_time, path)
+                # time_windows = QPPTW.Readjustment_time_windows(graph, weights, time_windows, label_path)
                 # graph0, weights0, time_windows0, in_angles0, out_angles0, costs0, pushback_edges0 = \
                 #     Initial_network.initial_network(the_airport)
-                # Draw_path.create_matplotlib_figure(graph, path, name1, name2, flightnum)
-                # for i in range(0, len(path)-1):
-                #     p1 = path[i]
-                #     p2 = path[i + 1]
-                #     # init_cost = weights[p1, p2]
-                #     init_cost = costs[(p1, p2)]
-                #     print("init_cost", init_cost)
-                #     path_cost = path_cost + list(init_cost)[0]
+                Draw_path.create_matplotlib_figure(graph, path, name1, name2, flightnum, turn_lines)
 
                 # """记录每一个航班的成本"""
                 # COSTS.append(list(COST)[0][0])
@@ -194,20 +189,20 @@ if __name__ == "__main__":
                     current_vertex = path[i - 1]
                     next_vertex = path[i]
                     edge = (current_vertex, next_vertex)
-                    # print(weights[edge])
                     l = init_l[edge]
                     t = weights[edge]
-                    if l <= 0:
+                    if edge in turn_lines:
                         turn_time += 1
                     lenth = lenth + abs(l)
                     time_lenth = time_lenth + t
                 turn_times = turn_times + turn_time
                 Lenth = Lenth + lenth
                 Tcost_without_waiting = Tcost_without_waiting + time_lenth
-
+                # totalholding_time = totalholding_time + holding_time
+            # print(COST, time_lenth)
             # print("fligt:", flightnum, "Path:", path)
-            # print("fligt:", flightnum)
-            # print("Cost:", COST, path_cost, lenth, time_lenth, turn_time)
+            # print("Cost:",flightnum, COST, turn_time)
+            # print("Cost:", flightnum, turn_time)
         cost_info = {
             "Date": file_name,
             "Total cost": Total_cost,
@@ -219,17 +214,51 @@ if __name__ == "__main__":
             "False": Failure_flight,
         }
         COSTS.append(cost_info)
-        print(cost_info)
-        # print("False flight number:", len(Failure_flight), "Total cost:", Total_cost, "Fuel_cost ", init_Tcost, "False:", Failure_flight)
+        # print(cost_info)
+        print("Total cost:", Total_cost, "Fuel_cost ", init_Tcost, W)
         # print("Lenth:", Lenth, "Tcost_without_waiting:", Tcost_without_waiting, "Total_turn_times ", turn_times)
         # 现在我们可以调用这些函数将列表写入到文本文件
-        # write_list_to_json(COSTS, 'Results/' + Cst.file + str(Cst.weight) + 'cost.json')
+        write_list_to_json(COSTS, 'Results/' + file_name + str(Cst.weight) + 'cost.json')
         # # 确保目录存在
         # file = Cst.file
         # os.makedirs(file, exist_ok=True)
         return COSTS
 
     for file_name in flight_file_name_list:
-        flights = gaptraffic.read_flights("Datas/traffic/" + file_name)
-        COSTS = suanfa(flights, file_name)
+        W = Cst.weight
+        # W = [0.1, 0,9]
+        # print(file_name)
+        if file_name == 'g':
+            flights = gaptraffic.read_flights("Datas/traffic/" + flight_file_name_list)
+            COSTS = suanfa(flights, flight_file_name_list, W)
+            break
+        else:
+            flights = gaptraffic.read_flights("Datas/traffic/" + file_name)
+            COSTS = suanfa(flights, file_name, W)
         write_list_to_json(COSTS, 'Results/' + 'Total_ten_days' + str(Cst.weight) + 'cost.json')
+
+    # 在循环外初始化一个空的DataFrame
+    # results = pd.DataFrame(columns=['Weight1', 'Weight2', 'TimeCost', 'FuelCost'])
+    # n = 200
+    # for i in tqdm(range(n+1), ncols=75):
+    #     # 计算权重
+    #     weight = [1 - 1/n * i, 0 + 1/n * i]
+    #     flights = gaptraffic.read_flights("Datas/traffic/" + flight_file_name_list)
+    #     COSTS = suanfa(flights, flight_file_name_list, weight)
+    #     timecost = COSTS[i]['Total cost']
+    #     fuelcost = COSTS[i]['Fuel cost']
+    #
+    #     # 将结果追加到DataFrame中
+    #     results = results.append({
+    #         'Weight1': weight[0],
+    #         'Weight2': weight[1],
+    #         'TimeCost': timecost,
+    #         'FuelCost': fuelcost
+    #     }, ignore_index=True)
+    #
+    # # 确保数据按照Weight1列排序
+    # results.sort_values(by='Weight1', inplace=True)
+    # # 将结果DataFrame保存到CSV文件中
+    # results.to_csv('results单机.csv', index=False)
+
+

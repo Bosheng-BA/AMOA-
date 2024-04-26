@@ -56,11 +56,12 @@ def create_bokeh_animation(network_point, pointcoordlist):
     show(p)
 
 
-def create_matplotlib_figure(graph, path, stand, runway, flightnum):
+def create_matplotlib_figure(graph, path, stand, runway, flightnum, turn_lines):
     # 创建保存图像的文件夹
     # save_dir = 'new_QPPTW_saved_figures_2019-08-07-new-考虑修改时间窗'
-    save_dir = 'Draw/TEST_2024-03-10-' + Cst.file + str(Cst.weight)
-    # path = [(22622.1,8509.6), (22622.7,8502.7), (22624.5,8495.9), (22627.5,8489.6), (22631.5,8483.9), (22636.4,8479.0), (22642.1,8475.0), (22648.4,8472.0), (22655.2,8470.2), (22662.1,8469.6)]
+    # save_dir = 'Draw/TEST-' + Cst.file + '/' + str(Cst.weight)
+    save_dir = 'Draw/TEST-0410' + Cst.file
+    # path =
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
@@ -73,29 +74,50 @@ def create_matplotlib_figure(graph, path, stand, runway, flightnum):
             # print(connection[-1])
             point1 = node
             point2 = connection[-1]
-            ax.plot([point1[0], point2[0]], [point1[1], point2[1]], color='gray')
+            # print(point1, point2)
+            if point2 == (21057, 9026) and point1 == (24108, 9026):
+                ax.plot([point1[0], point2[0]], [point1[1], point2[1]], color='black', linewidth=3.5)
+            elif point2 == (20155, 6926) and point1 == (23610, 6926):
+                ax.plot([point1[0], point2[0]], [point1[1], point2[1]], color='black', linewidth=3.5)
+            else:
+                ax.plot([point1[0], point2[0]], [point1[1], point2[1]], color='gray')
 
     # 绘制节点
-    for node in graph.keys():
-        ax.scatter(node[0], node[1], color='yellow')
+    # for node in graph.keys():
+    #     ax.scatter(node[0], node[1], color='gray')
 
     # Draw the source point and the target point
-    ax.scatter(path[0][0], path[0][1], color='red')
-    ax.scatter(path[-1][0], path[-1][1], color='green')
+    ax.scatter(path[0][0], path[0][1], color='red', s=60)
+    ax.scatter(path[-1][0], path[-1][1], color='green', s=60)
+
+    for i in range(1, len(path)):
+        current_vertex = path[i - 1]
+        next_vertex = path[i]
+        edge = (current_vertex, next_vertex)
+        if edge in turn_lines:
+            path_x = [point[0] for point in edge]
+            path_y = [point[1] for point in edge]
+            ax.plot(path_x, path_y, color='red', linewidth=2)
+
+        else:
+            path_x = [point[0] for point in edge]
+            path_y = [point[1] for point in edge]
+            ax.plot(path_x, path_y, color='blue', linewidth=2)
+
 
     # path = [(0, 0), (100, 0), (200, 0)]
     # 绘制最后得到的路径
-    path_x = [point[0] for point in path]
-    path_y = [point[1] for point in path]
-    # print(path_y)
-    ax.plot(path_x, path_y, color='blue', label="Final Path")
+    # path_x = [point[0] for point in path]
+    # path_y = [point[1] for point in path]
+    # # print(path_y)
+    # ax.plot(path_x, path_y, color='blue', label="Final Path", linewidth=2)
 
     # 设置图例和标题
     plt.legend()
     plt.title("Matplotlib Animation")
 
     # 使用stand和runway作为文件名的一部分
-    filename = f'flight_{flightnum}_stand_{stand}_runway_{runway}.png'
+    filename = f'flight_{flightnum}_stand_{stand}_runway_{runway}_{Cst.weight}.png'
     save_path = os.path.join(save_dir, filename)
 
     # 保存图像
